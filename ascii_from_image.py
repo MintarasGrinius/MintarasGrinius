@@ -52,6 +52,51 @@ def load(path, crop, use_rembg):
     return gray, alpha
 
 
+# Braille cells pack a 2x4 dot grid into one glyph, so each character carries
+# eight times the detail of a tone-ramp character. Bit per (col, row):
+BRAILLE_BITS = ((0x01, 0x02, 0x04, 0x40), (0x08, 0x10, 0x20, 0x80))
+
+
+def to_braille(gray, alpha, width, invert, contrast, aspect, equalize):
+    rows = max(1, round(width * gray.height / gray.width * aspect))
+    # A braille dot is very nearly square at these cell metrics, so the image
+    # is resampled to the dot grid rather than the character grid.
+    dots = gray.resize((width * 2, rows * 4), Image.LANCZOS)
+    mask = alpha.resize((width * 2, rows * 4), Image.LANCZOS) if alpha else None
+
+    if equalize:
+        dots = ImageOps.equalize(dots, mask=mask)
+    else:
+        dots = ImageOps.autocontrast(dots, cutoff=2, mask=mask)
+    if contrast != 1.0:
+        dots = ImageEnhance.Contrast(dots).enhance(contrast)
+    if invert:
+        dots = ImageOps.invert(dots)
+
+    # Floyd-Steinberg dithering turns continuous tone into dot density.
+    bits = dots.convert("1")
+
+    lines = []
+    for row in range(rows):
+        line = []
+        for col in range(width):
+            pattern = 0
+            for dx in range(2):
+                for dy in range(4):
+                    x, y = col * 2 + dx, row * 4 + dy
+                    if mask is not None and mask.getpixel((x, y)) < 128:
+                        continue
+                    if bits.getpixel((x, y)):
+                        pattern |= BRAILLE_BITS[dx][dy]
+            line.append(chr(0x2800 + pattern))
+        lines.append("".join(line).rstrip("\u2800 "))
+    while lines and not lines[0].strip("\u2800 "):
+        lines.pop(0)
+    while lines and not lines[-1].strip("\u2800 "):
+        lines.pop()
+    return lines
+
+
 def to_ascii(gray, alpha, width, ramp, invert, contrast, aspect,
              threshold, black, floor, mask_ellipse, vignette,
              equalize=False, unsharp=0.0):
@@ -166,6 +211,11 @@ def main():
         help="crop the source before converting, in source pixels",
     )
     parser.add_argument(
+        "--braille", action="store_true",
+        help="render with braille dot cells instead of a tone ramp: 8x the "
+             "detail per character. Ignores --ramp and --floor",
+    )
+    parser.add_argument(
         "--mask-ellipse", action="store_true",
         help="blank everything outside an inscribed ellipse, avatar style",
     )
@@ -176,11 +226,17 @@ def main():
     args = parser.parse_args()
 
     gray, alpha = load(args.image, args.crop, args.rembg)
-    lines = to_ascii(
-        gray, alpha, args.width, args.ramp, args.invert, args.contrast,
-        args.aspect, args.threshold, args.black, args.floor,
-        args.mask_ellipse, args.vignette, args.equalize, args.unsharp,
-    )
+    if args.braille:
+        lines = to_braille(
+            gray, alpha, args.width, args.invert, args.contrast,
+            args.aspect if args.aspect != 0.48 else 0.5, args.equalize,
+        )
+    else:
+        lines = to_ascii(
+            gray, alpha, args.width, args.ramp, args.invert, args.contrast,
+            args.aspect, args.threshold, args.black, args.floor,
+            args.mask_ellipse, args.vignette, args.equalize, args.unsharp,
+        )
     output = ROOT / args.output
     output.write_text("\n".join(lines) + "\n")
     print(f"wrote {output.name}: {len(lines)} lines x {max(map(len, lines))} columns")

@@ -433,27 +433,30 @@ def render_svg(art_lines, panel_lines, theme_name):
     svg_width = int(columns * CHAR_W + PAD * 2)
     svg_height = int(rows * LINE_H + PAD * 2 + 6)
 
-    body = []
-    for index in range(rows):
-        art = art_lines[index] if index < len(art_lines) else ""
-        panel = panel_lines[index] if index < len(panel_lines) else []
-        segments = []
-        if art or panel:
-            segments.append(("art", art.ljust(offset) if panel else art))
-        segments.extend(panel)
-        if not segments:
-            continue
-        y = PAD + FONT_SIZE + index * LINE_H
+    def text_element(x, segments):
         advance = sum(len(text) for _, text in segments) * CHAR_W
         spans = "".join(
             f'<tspan fill="{theme[color]}">{escape(text)}</tspan>'
             for color, text in segments
             if text
         )
-        body.append(
-            f'<text x="{PAD}" y="{y:.1f}" xml:space="preserve" '
+        return (
+            f'<text x="{x:.1f}" y="{y:.1f}" xml:space="preserve" '
             f'textLength="{advance:.1f}" lengthAdjust="spacingAndGlyphs">{spans}</text>'
         )
+
+    body = []
+    for index in range(rows):
+        art = art_lines[index] if index < len(art_lines) else ""
+        panel = panel_lines[index] if index < len(panel_lines) else []
+        y = PAD + FONT_SIZE + index * LINE_H
+        # Art and panel are separate elements, each pinned to its own advance.
+        # Sharing one element would let a wide art glyph set (braille, blocks)
+        # push the panel out of alignment row by row.
+        if art:
+            body.append(text_element(PAD, [("art", art)]))
+        if panel:
+            body.append(text_element(PAD + offset * CHAR_W, panel))
 
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width}" height="{svg_height}" viewBox="0 0 {svg_width} {svg_height}" role="img" aria-label="Profile card">
   <rect x="0.5" y="0.5" width="{svg_width - 1}" height="{svg_height - 1}" rx="8" fill="{theme['bg']}" stroke="{theme['border']}"/>

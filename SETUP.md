@@ -15,13 +15,24 @@ pip install -r requirements-art.txt    # optional: --rembg segmentation
 The recipe that produced the current `art.txt`:
 
 ```bash
-python3 ascii_from_image.py photo2.jpg --rembg --invert --equalize \
-  --crop 30 150 650 870 --width 44 --aspect 0.40 --floor 0.10 \
-  --ramp "  .-=+*#%@"
+python3 ascii_from_image.py photo2.jpg --rembg --braille --invert \
+  --contrast 1.4 --crop 30 170 650 830 --width 40
 ```
 
-The custom ramp has *two* leading spaces, which widens the blank range so
-blown-out highlights stay empty and the face keeps its contrast.
+Braille beat every tone-ramp setting by a wide margin. A `--ramp` character
+carries one tone value; a braille character carries a 2x4 dot grid, so it holds
+roughly eight times the detail per cell. Floyd-Steinberg dithering converts
+continuous tone into dot density.
+
+Two things to keep in mind when re-running it:
+
+- Braille dots are very nearly square at these cell metrics, so `--braille`
+  defaults `--aspect` to 0.5 and resamples to the *dot* grid, not the character
+  grid. Pick `--width` and the crop so the row count lands near the panel's
+  row count, or the card ends up with dead space on one side.
+- `--equalize` overcooks it here and goes patchy; plain autocontrast with
+  `--contrast 1.4` holds the face together. `--floor` and `--ramp` are ignored
+  in braille mode.
 
 What the flags are for:
 
