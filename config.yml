@@ -30,9 +30,8 @@ sections:
     rows:
       - ["OS", "macOS 15, iOS 18"]
       - ["Uptime", "{uptime}"]
-      - ["Host", "CoinGate"]
       - ["Kernel", "Growth / Product"]
-      - ["IDE", "Claude Code, VSCode"]
+      - ["IDE", "Zed"]
       - []
       - ["Languages.Programming", "TypeScript, JavaScript, Ruby, Java"]
       - ["Languages.Computer", "HTML, CSS, Sass, Svelte, SQL, Shell"]
