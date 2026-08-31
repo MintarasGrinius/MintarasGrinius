@@ -15,9 +15,13 @@ pip install -r requirements-art.txt    # optional: --rembg segmentation
 The recipe that produced the current `art.txt`:
 
 ```bash
-python3 ascii_from_image.py photo.jpg --rembg --invert --equalize \
-  --crop 250 75 630 455 --aspect 0.5 --width 44 --floor 0.05 --ramp classic
+python3 ascii_from_image.py photo2.jpg --rembg --invert --equalize \
+  --crop 30 150 650 870 --width 44 --aspect 0.40 --floor 0.10 \
+  --ramp "  .-=+*#%@"
 ```
+
+The custom ramp has *two* leading spaces, which widens the blank range so
+blown-out highlights stay empty and the face keeps its contrast.
 
 What the flags are for:
 
