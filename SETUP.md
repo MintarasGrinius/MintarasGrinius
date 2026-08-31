@@ -9,11 +9,33 @@ A nightly Action re-renders them.
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-python3 ascii_from_image.py photo.jpg --width 42
+pip install -r requirements-art.txt    # optional: --rembg segmentation
 ```
 
-Iterate on `--width`, `--ramp {classic,fine,blocks}`, `--contrast` and
-`--threshold 235` (blanks out a bright background) until `art.txt` reads well.
+The recipe that produced the current `art.txt`:
+
+```bash
+python3 ascii_from_image.py photo.jpg --rembg --invert --equalize \
+  --crop 250 75 630 455 --aspect 0.5 --width 44 --floor 0.05 --ramp classic
+```
+
+What the flags are for:
+
+- `--rembg` cuts the subject out and uses its silhouette as the mask. Needed
+  whenever the background is a similar brightness to the subject, since
+  luminance alone can't separate them.
+- `--invert` — the card is light text on dark, so a *dark* subject over a
+  *bright* background needs inverting to become the ink.
+- `--floor 0.05` sets a minimum ink density inside the silhouette, so bright
+  clothing doesn't drop out and leave holes in the figure.
+- `--equalize` spreads contrast within the silhouette. This is the lever to
+  reach for when the subject renders as one undifferentiated mass.
+- `--ramp {classic,fine,blocks,dense}` — `classic` is sparse and reads better
+  at small sizes; `fine` has more tonal steps but goes muddy under ~50 columns.
+- `--unsharp` adds local contrast but tends to ring; try it last.
+
+Front-facing, evenly lit headshots convert far better than side-lit ones or
+anything with a hat shading the face.
 
 ## 2. Fill in config.yml
 
@@ -41,6 +63,10 @@ contributions API.
 2. Add it to this repo as a secret named `ACCESS_TOKEN`:
    `gh secret set ACCESS_TOKEN --repo MintarasGrinius/MintarasGrinius`
 3. Render for real: `ACCESS_TOKEN=ghp_... python3 generate.py`
+
+For a quick local check you can borrow the gh CLI's own token instead —
+`ACCESS_TOKEN=$(gh auth token) python3 generate.py` — which covers everything
+public. The classic PAT is still what the Action needs.
 
 ## 5. Publish
 

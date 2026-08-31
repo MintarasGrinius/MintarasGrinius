@@ -1,52 +1,112 @@
 #!/usr/bin/env python3
 """Turn a photo into the ASCII portrait that sits left of the stats panel.
 
-    python3 ascii_from_image.py photo.jpg
-    python3 ascii_from_image.py photo.jpg --width 44 --ramp blocks --invert
+The card is light text on a dark background, so the subject has to become the
+ink. For a photo of a dark subject on a bright background that means --invert.
+Where luminance alone can't separate subject from background, --rembg cuts the
+subject out first and its alpha becomes the silhouette mask.
 
-Writes art.txt by default. Tweak --width until the card looks balanced
-(38-48 characters is the sweet spot) and re-run generate.py.
+    python3 ascii_from_image.py photo.jpg --rembg --invert --floor 0.15
+    python3 ascii_from_image.py photo.jpg --width 44 --ramp classic
+
+Writes art.txt. --rembg needs the optional extra: pip install -r requirements-art.txt
 """
 
 import argparse
 from pathlib import Path
 
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageOps
 
 ROOT = Path(__file__).resolve().parent
 
 RAMPS = {
-    # Dark to light. Terminal cells are roughly twice as tall as they are
-    # wide, so the vertical resample is halved to compensate.
+    # Dark to light. Terminal cells are about twice as tall as they are wide,
+    # so the vertical resample is halved to compensate.
     "classic": " .:-=+*#%@",
     "fine": " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
     "blocks": " .:-=+*░▒▓█",
+    "dense": " .,:;i1tfLCG08@",
 }
 
 
-def to_ascii(path, width, ramp, invert, contrast, aspect, threshold):
-    image = Image.open(path).convert("L")
-    height = max(1, round(width * image.height / image.width * aspect))
-    image = image.resize((width, height), Image.LANCZOS)
+def load(path, crop, use_rembg):
+    """Return (grayscale, alpha_or_None), background already segmented off."""
+    image = Image.open(path)
+    if use_rembg:
+        from rembg import remove  # optional dependency
 
-    image = ImageOps.autocontrast(image, cutoff=2)
+        image = remove(image.convert("RGBA"))
+
+    alpha = image.getchannel("A") if image.mode in ("RGBA", "LA") else None
+    gray = image.convert("L")
+
+    if crop:
+        box = tuple(crop)
+        gray = gray.crop(box)
+        alpha = alpha.crop(box) if alpha else None
+    elif alpha:
+        box = alpha.point(lambda v: 255 if v > 40 else 0).getbbox()
+        if box:
+            gray, alpha = gray.crop(box), alpha.crop(box)
+
+    return gray, alpha
+
+
+def to_ascii(gray, alpha, width, ramp, invert, contrast, aspect,
+             threshold, black, floor, mask_ellipse, vignette,
+             equalize=False, unsharp=0.0):
+    height = max(1, round(width * gray.height / gray.width * aspect))
+    gray = gray.resize((width, height), Image.LANCZOS)
+    if alpha:
+        alpha = alpha.resize((width, height), Image.LANCZOS)
+
+    if unsharp:
+        # Local contrast, so facial detail survives next to a black hat.
+        gray = gray.filter(ImageFilter.UnsharpMask(radius=2, percent=int(unsharp * 100)))
+    if equalize:
+        gray = ImageOps.equalize(gray, mask=alpha)
+    elif black is None:
+        gray = ImageOps.autocontrast(gray, cutoff=2, mask=alpha)
     if contrast != 1.0:
-        image = ImageEnhance.Contrast(image).enhance(contrast)
+        gray = ImageEnhance.Contrast(gray).enhance(contrast)
     if invert:
-        image = ImageOps.invert(image)
+        gray = ImageOps.invert(gray)
+    if black is not None:
+        # Everything at or below the black point goes blank; the rest is
+        # stretched back over the full range so the subject keeps its detail.
+        span = max(255 - black, 1)
+        gray = gray.point(lambda v: 0 if v <= black else int((v - black) * 255 / span))
+
+    ellipse = None
+    if mask_ellipse or vignette:
+        ellipse = Image.new("L", (width, height), 0)
+        ImageDraw.Draw(ellipse).ellipse((0, 0, width - 1, height - 1), fill=255)
+        if vignette:
+            ellipse = ellipse.filter(ImageFilter.GaussianBlur(vignette * width))
 
     characters = RAMPS.get(ramp, ramp)
     steps = len(characters) - 1
+    # Inside the silhouette, never fall below this ramp index -- otherwise
+    # bright clothing drops out and the figure stops reading as a figure.
+    base = round(floor * steps)
+
     lines = []
     for y in range(height):
         row = []
         for x in range(width):
-            value = image.getpixel((x, y))
+            if alpha is not None and alpha.getpixel((x, y)) < 128:
+                row.append(" ")
+                continue
+            if ellipse is not None and ellipse.getpixel((x, y)) < 128:
+                row.append(" ")
+                continue
+            value = gray.getpixel((x, y))
             if threshold is not None and value >= threshold:
                 row.append(" ")
                 continue
-            row.append(characters[round(value / 255 * steps)])
+            row.append(characters[base + round(value / 255 * (steps - base))])
         lines.append("".join(row).rstrip())
+
     while lines and not lines[0].strip():
         lines.pop(0)
     while lines and not lines[-1].strip():
@@ -64,24 +124,62 @@ def main():
         help=f"one of {', '.join(RAMPS)}, or a literal dark-to-light string",
     )
     parser.add_argument(
+        "--rembg", action="store_true",
+        help="segment the subject out of the background first, and use its "
+             "silhouette as the mask",
+    )
+    parser.add_argument(
         "--invert", action="store_true",
-        help="use on light-background photos so the subject stays dense",
+        help="use on a dark subject over a bright background, so the subject "
+             "becomes the dense ink",
+    )
+    parser.add_argument(
+        "--floor", type=float, default=0.0,
+        help="0-1 minimum ink density inside the silhouette, so bright "
+             "clothing still reads. Try 0.15",
     )
     parser.add_argument("--contrast", type=float, default=1.15)
+    parser.add_argument(
+        "--equalize", action="store_true",
+        help="histogram-equalize within the silhouette. Best lever when the "
+             "subject is one dark mass and features won't separate",
+    )
+    parser.add_argument(
+        "--unsharp", type=float, default=0.0,
+        help="local contrast boost before tone mapping, try 1.5",
+    )
     parser.add_argument(
         "--aspect", type=float, default=0.48,
         help="vertical squash for non-square character cells (default 0.48)",
     )
     parser.add_argument(
+        "--black", type=int, default=None,
+        help="black point 0-255: anything darker goes blank and the remainder "
+             "is re-stretched. Replaces the default autocontrast",
+    )
+    parser.add_argument(
         "--threshold", type=int, default=None,
-        help="blank out pixels brighter than this 0-255 value, to drop a "
-             "bright background (try 235)",
+        help="blank out pixels brighter than this 0-255 value",
+    )
+    parser.add_argument(
+        "--crop", type=int, nargs=4, metavar=("L", "T", "R", "B"),
+        help="crop the source before converting, in source pixels",
+    )
+    parser.add_argument(
+        "--mask-ellipse", action="store_true",
+        help="blank everything outside an inscribed ellipse, avatar style",
+    )
+    parser.add_argument(
+        "--vignette", type=float, default=0.0,
+        help="soften the ellipse edge; fraction of width, try 0.04",
     )
     args = parser.parse_args()
 
+    gray, alpha = load(args.image, args.crop, args.rembg)
     lines = to_ascii(
-        args.image, args.width, args.ramp, args.invert,
-        args.contrast, args.aspect, args.threshold,
+        gray, alpha, args.width, args.ramp, args.invert, args.contrast,
+        args.aspect, args.threshold, args.black, args.floor,
+        args.mask_ellipse, args.vignette, args.equalize, args.unsharp,
     )
     output = ROOT / args.output
     output.write_text("\n".join(lines) + "\n")

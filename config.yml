@@ -12,7 +12,7 @@ title_user: mintaras
 title_host: grinius
 
 # Optional. Powers {uptime}. Remove or set to null to drop the Uptime row.
-birthday: null
+birthday: "1995-09-21"
 
 # Panel width in characters. 62 matches the reference screenshot.
 width: 62
