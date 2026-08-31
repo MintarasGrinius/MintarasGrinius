@@ -3,4 +3,5 @@ __pycache__/
 *.pyc
 preview_*.png
 photo*.jpg
+photo*.png
 cutout.png

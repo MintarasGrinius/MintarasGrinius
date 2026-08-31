@@ -15,8 +15,8 @@ pip install -r requirements-art.txt    # optional: --rembg segmentation
 The recipe that produced the current `art.txt`:
 
 ```bash
-python3 ascii_from_image.py photo2.jpg --rembg --braille --invert \
-  --contrast 1.4 --crop 30 170 650 830 --width 40
+python3 ascii_from_image.py photo3.png --rembg --braille --invert \
+  --contrast 1.4 --crop 15 15 495 650 --width 40 --aspect 0.46
 ```
 
 Braille beat every tone-ramp setting by a wide margin. A `--ramp` character
@@ -49,8 +49,19 @@ What the flags are for:
   at small sizes; `fine` has more tonal steps but goes muddy under ~50 columns.
 - `--unsharp` adds local contrast but tends to ring; try it last.
 
-Front-facing, evenly lit headshots convert far better than side-lit ones or
-anything with a hat shading the face.
+The source photo matters more than any flag. A dead-on, evenly lit headshot
+against a plain background, with the face filling the frame, converts far
+better than a side-lit shot, an angled one, or anything with a hat shading the
+eyes. Three photos were tried here and the difference between them dwarfed
+every parameter tweak.
+
+Keep `--invert`. The card is light ink on dark, and it is the *dark* features
+-- brows, eye sockets, nostrils, beard texture -- that carry a face. Rendering
+the bright side as ink fills the face into a featureless blob.
+
+Ink colour matters as much as the character set: the art was long rendered in
+a muted grey, which flattened the contrast no matter what was drawn into it.
+See `THEMES` in `generate.py`.
 
 ## 2. Fill in config.yml
 
