@@ -38,8 +38,7 @@ sections:
       - ["Languages.Computer", "HTML, CSS, Sass, Svelte, SQL, Shell"]
       - ["Languages.Real", "Lithuanian, English"]
       - []
-      - ["Hobbies.Software", "Automation, Web Analytics"]
-      - ["Hobbies.Hardware", "Homelab"]
+      - ["Hobbies.Software", "Automation, Web Analytics, AI"]
 
   - title: Contact
     rows:
