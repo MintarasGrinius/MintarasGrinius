@@ -41,7 +41,8 @@ sections:
 
   - title: Contact
     rows:
-      - ["Email.Work", "mintaras@coingate.com"]
+      - ["Email.Personal", "mintarasg@gmail.com"]
+      - ["LinkedIn", "https://lt.linkedin.com/in/mintaras-grinius"]
       - ["GitHub", "{username}"]
 
   # The GitHub Stats block is generated automatically and always goes last.
