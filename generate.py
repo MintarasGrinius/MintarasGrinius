@@ -37,7 +37,7 @@ THEMES = {
     "dark_mode": {
         "bg": "#161b22",
         "border": "#30363d",
-        "art": "#7d8590",
+        "art": "#e6edf3",
         "header": "#79c0ff",
         "label": "#56d4dd",
         "value": "#e6edf3",
@@ -49,7 +49,7 @@ THEMES = {
     "light_mode": {
         "bg": "#f6f8fa",
         "border": "#d0d7de",
-        "art": "#6e7781",
+        "art": "#24292f",
         "header": "#0969da",
         "label": "#1b7c83",
         "value": "#1f2328",
