@@ -1,0 +1,49 @@
+# ---------------------------------------------------------------------------
+# Everything on this page that isn't pulled live from GitHub lives here.
+# Values may contain {tokens}: {uptime} {repos} {contributed} {stars}
+#                              {commits} {followers} {loc} {loc_added}
+#                              {loc_deleted} {username}
+# ---------------------------------------------------------------------------
+
+username: MintarasGrinius
+
+# The "user@host" line at the top of the panel.
+title_user: mintaras
+title_host: grinius
+
+# Optional. Powers {uptime}. Remove or set to null to drop the Uptime row.
+birthday: null
+
+# Panel width in characters. 62 matches the reference screenshot.
+width: 62
+
+# The ASCII portrait. Generate it with:  python3 ascii_from_image.py photo.jpg
+art_file: art.txt
+
+# Stats options
+include_forks: false   # count forked repos toward stars / lines of code
+count_loc: true        # walk commit history for lines of code (cached)
+
+sections:
+  # An empty title means "attach to the user@host header".
+  - title: null
+    rows:
+      - ["OS", "macOS 15, iOS 18"]
+      - ["Uptime", "{uptime}"]
+      - ["Host", "CoinGate"]
+      - ["Kernel", "Growth / Product"]
+      - ["IDE", "Claude Code, VSCode"]
+      - []
+      - ["Languages.Programming", "Python, JavaScript, SQL"]
+      - ["Languages.Computer", "HTML, CSS, YAML, Markdown"]
+      - ["Languages.Real", "Lithuanian, English"]
+      - []
+      - ["Hobbies.Software", "Automation, Web Analytics"]
+      - ["Hobbies.Hardware", "Homelab"]
+
+  - title: Contact
+    rows:
+      - ["Email.Work", "mintaras@coingate.com"]
+      - ["GitHub", "{username}"]
+
+  # The GitHub Stats block is generated automatically and always goes last.
