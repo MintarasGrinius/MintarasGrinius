@@ -1,8 +1,23 @@
 # Setup
 
-The card is two SVGs (`dark_mode.svg`, `light_mode.svg`) rendered by
-`generate.py` and swapped by `prefers-color-scheme` in `README.md`.
-A nightly Action re-renders them.
+The profile opens with editorial banners matching the personal website: ivory or charcoal, orange accents, and a static wireframe torus. `banner.py` draws self-contained SVGs without external fonts, scripts, images, or services.
+
+`generate.py` produces `profile-light.svg`, `profile-dark.svg`, and matching `-mobile` variants. The README selects the appropriate image by color scheme and viewport size. Its native text, project table, and links remain readable independently of the artwork.
+
+The original ASCII portrait and activity card (`dark_mode.svg`, `light_mode.svg`) are preserved inside the README’s expandable “Under the hood” section. The daily Action refreshes all six SVGs.
+
+## Editorial banner
+
+Edit `display_name` and `current_role` in `config.yml`. The shared colors and wireframe geometry live in `banner.py`; the headline mirrors the website. The March 2025 employment transition is also recorded in the README and the mobile banner footer.
+
+```bash
+python3 generate.py --banners-only  # no token or network; preserves activity cards
+python3 -m unittest discover -s tests
+```
+
+Use `--banners-only` for design changes. `--offline` still produces placeholder activity statistics and should only be used for local previews, not publication.
+
+The sections below document the preserved ASCII card and its daily activity workflow.
 
 ## 1. ASCII portrait
 

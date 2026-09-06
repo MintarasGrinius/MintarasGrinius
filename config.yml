@@ -6,6 +6,8 @@
 # ---------------------------------------------------------------------------
 
 username: MintarasGrinius
+display_name: Mintaras Grinius
+current_role: Fullstack Developer at trip1
 
 # The "user@host" line at the top of the panel.
 title_user: mintaras
@@ -28,9 +30,10 @@ sections:
   # An empty title means "attach to the user@host header".
   - title: null
     rows:
-      - ["OS", "macOS 15, iOS 18"]
-      - ["Uptime", "{uptime}"]
-      - ["Kernel", "Growth / Product"]
+      - ["Role", "Fullstack Developer at trip1"]
+      - ["Since", "March 2025"]
+      - ["Based in", "Lithuania"]
+      - ["Focus", "Engineering / Product / Growth"]
       - ["IDE", "Zed"]
       - []
       - ["Languages.Programming", "TypeScript, JavaScript, Ruby, Java"]

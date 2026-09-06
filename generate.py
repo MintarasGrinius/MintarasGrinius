@@ -19,6 +19,7 @@ from xml.sax.saxutils import escape
 
 import requests
 import yaml
+from banner import render_banner
 
 ROOT = Path(__file__).resolve().parent
 CACHE = ROOT / "cache" / "loc.json"
@@ -35,24 +36,24 @@ GAP = 3  # spaces between the art and the panel
 
 THEMES = {
     "dark_mode": {
-        "bg": "#161b22",
-        "border": "#30363d",
-        "art": "#e6edf3",
-        "header": "#79c0ff",
-        "label": "#56d4dd",
-        "value": "#e6edf3",
+        "bg": "#1c1e1b",
+        "border": "#3c4036",
+        "art": "#efeee5",
+        "header": "#ff805a",
+        "label": "#b8c6a6",
+        "value": "#efeee5",
         "muted": "#484f58",
         "dot": "#484f58",
         "added": "#3fb950",
         "deleted": "#f85149",
     },
     "light_mode": {
-        "bg": "#f6f8fa",
-        "border": "#d0d7de",
-        "art": "#24292f",
-        "header": "#0969da",
-        "label": "#1b7c83",
-        "value": "#1f2328",
+        "bg": "#f7f6f2",
+        "border": "#d8d9cf",
+        "art": "#252621",
+        "header": "#e9512b",
+        "label": "#4b6240",
+        "value": "#252621",
         "muted": "#afb8c1",
         "dot": "#afb8c1",
         "added": "#1a7f37",
@@ -472,6 +473,11 @@ def render_svg(art_lines, panel_lines, theme_name):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--banners-only",
+        action="store_true",
+        help="render only the four editorial banners, without stats or network access",
+    )
+    parser.add_argument(
         "--offline",
         action="store_true",
         help="render with zeroed stats, no token or network needed",
@@ -479,6 +485,14 @@ def main():
     args = parser.parse_args()
 
     config = yaml.safe_load((ROOT / "config.yml").read_text())
+    for theme in ("light", "dark"):
+        for mobile in (False, True):
+            suffix = "-mobile" if mobile else ""
+            target = ROOT / f"profile-{theme}{suffix}.svg"
+            target.write_text(render_banner(config, theme, mobile))
+            print(f"wrote {target.name}")
+    if args.banners_only:
+        return
     art_path = ROOT / config.get("art_file", "art.txt")
     if art_path.exists():
         art_lines = art_path.read_text().rstrip("\n").split("\n")
